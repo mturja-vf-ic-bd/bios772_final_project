@@ -10,30 +10,20 @@ from src.dataloaders.loader_utils import *
 SEED = 42
 
 
-class adDataLoader(pl.LightningDataModule):
+class vanillaDataLoader(pl.LightningDataModule):
     def __init__(
             self,
             batch_size=1,
-            split=0.8,
-            template_list=None,
-            oversample=False
+            split=0.8
     ):
-        super(adDataLoader, self).__init__()
+        super(vanillaDataLoader, self).__init__()
         self.batch_size = batch_size
         self.split = split
-        self.smote = SMOTE(random_state=SEED)
         # x = torch.from_numpy(np.load('../../data/train_x.npy')).to(torch.float32)
         # y = torch.from_numpy(np.load('../../data/train_y.npy'))
         x = torch.from_numpy(np.load('data/train_x.npy')).to(torch.float32)
         y = torch.from_numpy(np.load('data/train_y.npy'))
-        if template_list is not None:
-            range_list = [template_to_idx_mapping[template] for template in template_list]
-            x = cut_templates_and_join(x, range_list)
         self.x_train, self.x_val, self.y_train, self.y_val = train_test_split(x, y, test_size=1-split, random_state=SEED)
-        if oversample:
-            self.x_train, self.y_train = self.smote.fit_resample(self.x_train, self.y_train)
-            self.x_train = torch.from_numpy(self.x_train)
-            self.y_train = torch.from_numpy(self.y_train)
 
     def normalize(self, x, eps=1e-4):
         mu = x.mean(dim=0, keepdim=True)

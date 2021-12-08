@@ -38,5 +38,15 @@ template_to_idx_mapping = {
     "thick_schaefer_800_17": (24579, 25379),
     "thick_schaefer_800_7": (25379, 26179),
     "thick_schaefer_900_17": (26179, 27079),
-    "thick_schaefer_900_7": (27079, 27979)
+    "thick_schaefer_900_7": (27079, 27979),
+    "vol_yeo_17": (13901, 13918),
+    "vol_yeo_7": (13918, 13925),
+    "thick_yeo_17": (28145, 28162),
+    "thick_yeo_7": (28162, 28168),
+    "vol_aal": (0, 98),
+    "vol_aal2": (98, 200),
+    "vol_aal3": (200, 335),
+    "thick_aal": (14261, 14262),
+    "thick_aal2": (14377, 14497),
+    "thick_aal3": (14497, 14663)
 }

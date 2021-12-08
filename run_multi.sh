@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python3 -m src.trainers.multi_scale_vae_trainer --input_template thick_schaefer_100_7 vol_schaefer_100_7 thick_schaefer_200_7 vol_schaefer_200_7 --target_template_list thick_schaefer_300_7 vol_schaefer_300_7 thick_schaefer_400_7 vol_schaefer_400_7 --exp_name multi_scale_1000_to_100_200_300 --loss_weights 0.001 0.00001 --cls_layers 256 3 --write_dir multi_scale_logs --max_epochs 10000  -l 256 256 -d 0.5 --lr 0.0001 --mode train -g 1 --split 0.8 --batch_size 32 --batch_norm 1

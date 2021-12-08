@@ -39,9 +39,3 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.mlp(x)
 
-
-if __name__ == '__main__':
-    dimension_list = [10, 32, 32, 2]
-    mlp = MLP(dimension_list)
-    print(mlp)
-
