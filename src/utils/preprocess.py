@@ -38,6 +38,25 @@ def load_data(subject_dir, csv_path):
     return x, y
 
 
+def load_only_x(subject_dir):
+    """
+    subject_dir: directory to the folder that contains Subject_xxxx.npy data
+    csv_path: directory to label.csv
+    """
+    subjects = os.listdir(subject_dir)
+
+    x = []
+    for subject in subjects:
+        features_path = os.path.join(subject_dir, subject)
+        if not os.path.exists(features_path) or not features_path.endswith('npy'):
+            continue
+        else:
+            x.append(np.load(features_path))
+
+    x = np.array(x)
+    return x, subjects
+
+
 def main():
     """
     The main function you are going to run.
@@ -52,14 +71,12 @@ def main():
     np.save('../../data/train_x.npy', train_x)
     np.save('../../data/train_y.npy', train_y)
 
-    """
-    test_x, test_y = load_data(r'./test_data', r'./label.csv')
+    test_x, subjects = load_only_x(r'../../data/test_data')
     test_x = np.nan_to_num(test_x, nan=0.0, posinf=0, neginf=0)
     test_x = (test_x - mean) / std # you may encounter warning, that's fine.
     test_x = np.nan_to_num(test_x, nan=0.0, posinf=0, neginf=0)
-    np.save('test_x.npy', test_x)
-    np.save('test_y.npy', test_y)
-    """
+    np.save('../../data/test_x.npy', test_x)
+    np.save('../../data/test_sub_ids.npy', subjects)
 
 
 if __name__=='__main__':

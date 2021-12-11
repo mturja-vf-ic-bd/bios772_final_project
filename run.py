@@ -39,6 +39,14 @@ cmd_list.append("python3 -m src.trainers.mlp_trainer --write_dir " + WRITE_DIR +
           " --template_list vol_yeo_17 thick_yeo_17" + " --max_epochs " + MAX_EPOCHS + " -l " + HIDDEN_DIMS + " -d " + DROPOUT + " --lr " + LR + \
           " --mode train -g 1 --split 0.8 --batch_size 32 --batch_norm 1 &")
 
+# Run MIST
+mist_roi_count = [12, 20, 64, 122, 197, 325, 444]
+for mist_roi in mist_roi_count:
+    cmd = "python3 -m " \
+          "src.trainers.mlp_trainer --write_dir " + WRITE_DIR + " --exp_name " + MODEL + "_mist_"+ str(mist_roi) + \
+          " --template_list " + f"vol_mist_{mist_roi} thick_mist_{mist_roi} " + "--max_epochs " + MAX_EPOCHS + " -l " + HIDDEN_DIMS + " -d " + DROPOUT + " --lr " + LR + \
+          " --mode train -g 1 --split 0.8 --batch_size 32 --batch_norm 1 &"
+    cmd_list.append(cmd)
 with open("run.sh", "w") as f:
     f.writelines("#!/bin/bash")
     f.writelines("\n\n")

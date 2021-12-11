@@ -8,6 +8,8 @@ from imblearn.over_sampling import SMOTE
 from src.dataloaders.loader_utils import *
 
 SEED = 42
+np.random.seed(SEED)
+torch.manual_seed(SEED)
 
 
 class vanillaDataLoader(pl.LightningDataModule):

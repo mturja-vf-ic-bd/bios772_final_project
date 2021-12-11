@@ -9,38 +9,31 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import loggers as pl_loggers
 import torchmetrics
 
-from src.dataloaders.vanilla_data_loader import vanillaDataLoader
+from src.dataloaders.ad_data_loaders import EnsembleDataLoader, get_length_of_cuts
 from src.utils.data_utils import template_to_idx_mapping
+from src.layers.MLP import MLP
 from src.utils.folder_manager import create_version_dir
-from src.models.MultiModalMLP import MultiModalMLP
 
 
-class MultiModalTrainer(pl.LightningModule):
-    def __init__(
-            self,
-            enc_hidden_layers,
-            cls_layers,
-            latent_dim,
-            template_list,
-            lr=1e-4,
-            activation=nn.ELU(),
-            batch_norm=False,
-            dropout=0.01
-    ):
-        super(MultiModalTrainer, self).__init__()
-        enc_layer_dict = {}
-        num_classes = cls_layers[-1]
-        self.learning_rate = lr
-        for t in template_list:
-            enc_layer_dict[t] = enc_hidden_layers
-        self.model = MultiModalMLP(
-            enc_layer_dict=enc_layer_dict,
-            cls_layers=cls_layers,
-            latent_dim=latent_dim,
+class ensembleTrainer(pl.LightningModule):
+    def __init__(self,
+                 layers,
+                 lr=1e-4,
+                 activation=nn.ELU(),
+                 batch_norm=False,
+                 num_classes=3,
+                 dropout=0.01):
+        super(ensembleTrainer, self).__init__()
+        self.model = MLP(
+            layers,
+            prefix="mlp-net",
             activation=activation,
-            dropout=dropout,
-            batch_norm=batch_norm
+            batch_norm=batch_norm,
+            dropout=dropout
         )
+        self.learning_rate = lr
+        self.dropout=dropout
+        self.activation=activation
         self.train_accuracy = torchmetrics.Accuracy()
         self.val_accuracy = torchmetrics.Accuracy()
         self.train_f1 = torchmetrics.F1(
@@ -81,6 +74,10 @@ class MultiModalTrainer(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx, "val")
 
+    def predict_step(self, x):
+        self.eval()
+        return torch.softmax(self.model(x), dim=-1)
+
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(),
                                 lr=self.learning_rate,
@@ -92,8 +89,7 @@ class MultiModalTrainer(pl.LightningModule):
 
         # Compute weight for each class
         weight = torch.FloatTensor(
-            [len(y) * 1.0 / (y == 0).sum(), len(y) * 1.0 / (y == 1).sum(),
-             len(y) * 1.0 / (y == 2).sum()]
+            [len(y) * 1.0 / (y == 0).sum(), len(y) * 1.0 / (y == 1).sum()]
         ).to(y.device)
         losses = self.compute_loss(y_pred, y, weight)
         loss = losses["cls_loss"]
@@ -103,6 +99,8 @@ class MultiModalTrainer(pl.LightningModule):
         elif category == "val":
             self.val_accuracy(torch.argmax(y_pred, dim=-1), y)
             self.val_f1(torch.softmax(y_pred, dim=-1), y)
+        elif category == "predict":
+            return torch.softmax(y_pred, dim=-1)
         self.add_log(losses, category)
         return loss
 
@@ -110,20 +108,19 @@ class MultiModalTrainer(pl.LightningModule):
 def cli_main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--enc_hidden_layers",
+    parser.add_argument("-l", "--layers",
                         nargs="+", type=int,
                         help="Hidden layer dimensions")
     parser.add_argument("-b", "--batch_size", nargs="?", type=int, default=1)
     parser.add_argument("-g", "--gpus", nargs="?", type=int, default=0)
     parser.add_argument("-m", "--max_epochs", nargs="?", type=int, default=100)
-    parser.add_argument("--latent_dim", type=int, default=64)
-    parser.add_argument("--cls_layers", type=int, nargs="+",
-                        help="classification head")
     parser.add_argument("-d", "--dropout", nargs="?",
                         type=float, default=0.01)
     parser.add_argument("--lr", default=1e-3, type=float, help="learning rate")
     parser.add_argument("--mode", choices=["train", "test"], default="test")
     parser.add_argument("--ckpt", type=str, help="Checkpoint file for prediction")
+    parser.add_argument("--oversample", type=int, default=0,
+                        help="Oversample using SMOTE")
     parser.add_argument("--batch_norm", type=int, default=0,
                         help="add batch norm to neural network")
     parser.add_argument("--exp_name", type=str, default="default",
@@ -131,6 +128,7 @@ def cli_main():
     parser.add_argument("--load_from_ckpt", type=int, default=0,
                         help="Start from a checkpoint for training")
     parser.add_argument("--write_dir", type=str, default="lightning_logs")
+    parser.add_argument("--pair_name", type=str, default="NC_AD", choices=["NC_AD", "NC_MCI", "MCI_AD"])
     parser.add_argument("--split", type=float, default=0.8,
                         help="Fraction of data for training and rest for validation")
     parser.add_argument("--template_list", type=str, nargs="+",
@@ -143,9 +141,10 @@ def cli_main():
         print("{} -> {}".format(k, v))
 
     if args.mode == "train":
-        data_loader = vanillaDataLoader(
+        data_loader = EnsembleDataLoader(
             batch_size=args.batch_size,
-            split=args.split
+            template_list=args.template_list,
+            pair_name=args.pair_name
         )
         # Create write dir
         write_dir = create_version_dir(
@@ -154,10 +153,9 @@ def cli_main():
         args.write_dir = write_dir
         ckpt = ModelCheckpoint(
             dirpath=os.path.join(write_dir, "checkpoints"),
-            monitor="val/f1_epoch",
-            mode="max",
+            monitor="val/acc_epoch",
             every_n_epochs=100,
-            save_top_k=1,
+            save_top_k=-1,
             auto_insert_metric_name=False,
             filename='epoch-{epoch:02d}-loss-{val/cls_loss:.3f}-f1={val/f1_epoch:.3f}-acc={val/acc_epoch:.3f}'
         )
@@ -169,17 +167,16 @@ def cli_main():
             log_every_n_steps=10,
             callbacks=[ckpt]
         )
+        input_dim = get_length_of_cuts(args.template_list)
         if args.load_from_ckpt == 1:
-            model = MultiModalTrainer.load_from_checkpoint(checkpoint_path=args.ckpt)
+            model = ensembleTrainer.load_from_checkpoint(checkpoint_path=args.ckpt)
         else:
-            model = MultiModalTrainer(
-                enc_hidden_layers=args.enc_hidden_layers,
-                cls_layers=args.cls_layers,
-                latent_dim=args.latent_dim,
-                template_list=args.template_list,
+            model = ensembleTrainer(
+                layers=[input_dim] + args.layers,
                 lr=args.lr,
                 batch_norm=True if args.batch_norm == 0 else False,
-                dropout=args.dropout
+                dropout=args.dropout,
+                num_classes=args.layers[-1]
             )
         trainer.fit(
             model,

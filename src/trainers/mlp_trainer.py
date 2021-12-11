@@ -147,11 +147,12 @@ def cli_main():
         args.write_dir = write_dir
         ckpt = ModelCheckpoint(
             dirpath=os.path.join(write_dir, "checkpoints"),
-            monitor="val/cls_loss",
-            every_n_epochs=20,
-            save_top_k=10,
+            monitor="val/f1_epoch",
+            every_n_epochs=100,
+            mode="max",
+            save_top_k=1,
             auto_insert_metric_name=False,
-            filename='epoch-{epoch:02d}-loss-{val/cls_loss:.3f}'
+            filename='epoch-{epoch:02d}-loss-{val/cls_loss:.3f}-f1={val/f1_epoch:.3f}-acc={val/acc_epoch:.3f}'
         )
         tb_logger = pl_loggers.TensorBoardLogger(write_dir, name="tb_logs")
         trainer = pl.Trainer(

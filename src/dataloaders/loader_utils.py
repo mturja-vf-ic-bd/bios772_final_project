@@ -14,6 +14,11 @@ def cut_templates_and_join(x, index_list):
     return torch.cat(temp_cuts, dim=-1)
 
 
+def cut_templates(x, template_list):
+    index_list = [template_to_idx_mapping[t] for t in template_list]
+    return cut_templates_and_join(x, index_list)
+
+
 def get_length_of_cuts(template_list):
     return sum([template_to_idx_mapping[temp][1] - template_to_idx_mapping[temp][0]
                 for temp in template_list])
