@@ -17,16 +17,16 @@ def entropy(y_pred):
 
 
 def predict(x):
-    y_pred_nc_ad = predict_ensemble(x, ckpt_name="nc_ad_2.ckpt")
-    y_pred_nc_mci = predict_ensemble(x, ckpt_name="nc_mci_2.ckpt")
-    y_pred_mci_ad = predict_ensemble(x, ckpt_name="mci_ad_2.ckpt")
+    y_pred_nc_ad = predict_ensemble(x, ckpt_name="src/predictions/nc_ad_2.ckpt")
+    y_pred_nc_mci = predict_ensemble(x, ckpt_name="src/predictions/nc_mci_2.ckpt")
+    y_pred_mci_ad = predict_ensemble(x, ckpt_name="src/predictions/mci_ad_2.ckpt")
     entropy_list = torch.stack([entropy(y_pred_nc_ad), entropy(y_pred_nc_mci), entropy(y_pred_mci_ad)], dim=-1)
     y_pred = torch.stack([torch.argmax(y_pred_nc_ad, dim=1) * 2, torch.argmax(y_pred_nc_mci, dim=1), torch.argmax(y_pred_mci_ad, dim=1) + 1], dim=-1)
     y_pred = y_pred.gather(1, torch.argmin(entropy_list, dim=-1).view(-1, 1)).squeeze(1)
     return y_pred
 
 
-from utils import normalize, get_pred_x
+from src.predictions.utils import normalize, get_pred_x
 
 
 if __name__ == '__main__':

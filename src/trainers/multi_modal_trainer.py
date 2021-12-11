@@ -112,13 +112,13 @@ def cli_main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--enc_hidden_layers",
                         nargs="+", type=int,
-                        help="Hidden layer dimensions")
+                        help="Embedding module layers")
     parser.add_argument("-b", "--batch_size", nargs="?", type=int, default=1)
     parser.add_argument("-g", "--gpus", nargs="?", type=int, default=0)
     parser.add_argument("-m", "--max_epochs", nargs="?", type=int, default=100)
     parser.add_argument("--latent_dim", type=int, default=64)
     parser.add_argument("--cls_layers", type=int, nargs="+",
-                        help="classification head")
+                        help="Classification module layers")
     parser.add_argument("-d", "--dropout", nargs="?",
                         type=float, default=0.01)
     parser.add_argument("--lr", default=1e-3, type=float, help="learning rate")
@@ -136,7 +136,7 @@ def cli_main():
     parser.add_argument("--template_list", type=str, nargs="+",
                         choices=list(template_to_idx_mapping.keys()),
                         default=list(template_to_idx_mapping.keys()),
-                        help="Choose a list of templates to train on")
+                        help="Choose a list of atlases to train on")
     args = parser.parse_args()
     print("Hyper-parameters:")
     for k, v in vars(args).items():

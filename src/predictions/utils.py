@@ -10,13 +10,13 @@ def normalize(x, eps=1e-4):
 
 
 def get_val_x(template_list):
-    x = cut_templates(torch.from_numpy(np.load("../../data/ensemble/val_x.npy")), template_list).to(torch.float32)
-    y = torch.from_numpy(np.load("../../data/ensemble/val_y.npy"))
+    x = cut_templates(torch.from_numpy(np.load("data/ensemble/val_x.npy")), template_list).to(torch.float32)
+    y = torch.from_numpy(np.load("data/ensemble/val_y.npy"))
     x = normalize(x)
     return x, y
 
 
 def get_pred_x():
-    x = torch.from_numpy(np.load("../../data/test_x.npy")).to(torch.float32)
-    sub_ids = np.load("../../data/test_sub_ids.npy")
+    x = torch.from_numpy(np.load("data/test_x.npy")).to(torch.float32)
+    sub_ids = np.load("data/test_sub_ids.npy")
     return x, sub_ids
