@@ -43,6 +43,6 @@ python3 -m src.predictions.predict_ensemble
 
 ### Final predictions
 Final prediction results are saved in the prediction_labels folder: 
-- prediction_labels/ensemble_prediction_labels.csv
-- prediction_labels/mlp_prediction_labels.csv
-- prediction_labels/mm-mlp_prediction_labels.csv
+- ensemble_prediction_labels.csv
+- mlp_prediction_labels.csv
+- mm-mlp_prediction_labels.csv
